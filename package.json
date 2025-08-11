@@ -1,0 +1,13 @@
+{
+  "name": "tevalovalo-bingo-caller-v6",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'static site'",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
+}

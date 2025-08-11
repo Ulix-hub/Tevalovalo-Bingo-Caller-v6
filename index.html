@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tevalovalo Bingo Caller</title>
+  <meta name="theme-color" content="#0d47a1" />
+  <meta name="description" content="Tevalovalo Bingo Caller — themes, PNG export, lock, and server-verified one-time codes." />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="theme-classic">
+  <!-- LICENSE GATE -->
+  <div id="licenseGate" class="license-gate">
+    <div class="gate-card">
+      <h2>Enter Access Code</h2>
+      <p class="muted">One-time unlock on this device.</p>
+      <input id="codeInput" placeholder="e.g. TVLV-ABCD-1234" />
+      <div class="gate-actions">
+        <button id="verifyBtn">Unlock</button>
+        <button id="helpBtn" class="ghost">Help</button>
+      </div>
+      <div id="gateMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <header>
+    <h1>Tevalovalo Bingo Caller</h1>
+    <div class="controls-row">
+      <button id="startBtn">Start</button>
+      <button id="nextBtn" disabled>Next Call</button>
+      <button id="undoBtn" disabled>Undo</button>
+      <button id="resetBtn" disabled>Reset</button>
+      <button id="fsBtn">Fullscreen</button>
+      <button id="lockBtn" class="lock">Lock</button>
+    </div>
+
+    <div class="controls-row">
+      <label><input type="checkbox" id="speakToggle" checked /> Speak calls</label>
+      <label><input type="checkbox" id="soundToggle" /> Play sound</label>
+      <label class="inline">
+        Auto call
+        <input type="number" id="autoSeconds" min="2" max="60" value="6" />s
+        <button id="autoToggle" disabled>Start Auto</button>
+      </label>
+      <label class="inline">
+        Theme
+        <select id="themeSelect">
+          <option value="random" selected>Random each game</option>
+          <option value="theme-classic">Classic</option>
+          <option value="theme-neon">Neon</option>
+          <option value="theme-pastel">Pastel</option>
+          <option value="theme-contrast">High Contrast</option>
+          <option value="theme-ocean">Ocean</option>
+        </select>
+      </label>
+      <button id="downloadPngBtn" title="Download board as an image">Download PNG</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="current">
+      <div class="label">Current Call</div>
+      <div id="currentCall" class="current-number">—</div>
+      <div id="lastFive" class="last-five">Last 5: —</div>
+    </section>
+
+    <section>
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <section>
+      <h2>History</h2>
+      <div id="history" class="history"></div>
+    </section>
+  </main>
+
+  <div id="lockOverlay" class="lock-overlay" hidden>
+    <div class="lock-card">
+      <div class="padlock">🔒</div>
+      <div class="lock-title">Board Locked</div>
+      <div class="lock-sub">PNG export still available.</div>
+      <div class="lock-actions">
+        <button id="unlockBtn">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="ding" preload="auto">
+    <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+  </audio>
+
+  <canvas id="exportCanvas" width="1400" height="1000" style="display:none"></canvas>
+
+  <script src="/script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js')); }
+  </script>
+</body>
+</html>

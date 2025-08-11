@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Owner — Code Generator (Server)</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body{max-width:900px; margin:20px auto; padding:16px}
+    textarea{width:100%; min-height:220px}
+    input[type="text"], input[type="number"]{padding:8px; border-radius:8px; border:1px solid #ccc; width:100%}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .row > *{flex:1 1 220px}
+    .muted{opacity:.8}
+  </style>
+</head>
+<body>
+  <h1>Owner — Generate Access Codes (Server-verified)</h1>
+  <p class="muted">Enter your Admin Token (set in Netlify env) and generate codes. Codes are stored in the server and can be used only once, bound to a device.</p>
+
+  <div class="row">
+    <div>
+      <label>Admin Token (from Netlify env)</label>
+      <input id="adminToken" type="text" placeholder="paste your token" />
+    </div>
+    <div>
+      <label>How many codes?</label>
+      <input id="count" type="number" min="1" max="5000" value="20" />
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Prefix (optional)</label>
+      <input id="prefix" type="text" value="TVLV" />
+    </div>
+    <div>
+      <label>Code length (per group, 4-6)</label>
+      <input id="len" type="number" min="4" max="6" value="4" />
+    </div>
+    <div>
+      <label>Groups (2-4)</label>
+      <input id="groups" type="number" min="2" max="4" value="2" />
+    </div>
+  </div>
+
+  <p>
+    <button id="genBtn">Generate</button>
+    <button id="copyBtn">Copy</button>
+    <button id="saveBtn">Download .txt</button>
+  </p>
+
+  <textarea id="out" placeholder="Codes appear here…"></textarea>
+
+  <script>
+  async function adminGenerate() {
+    const token = document.getElementById('adminToken').value.trim();
+    const count = parseInt(document.getElementById('count').value||'0', 10);
+    const prefix = document.getElementById('prefix').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const L = Math.max(4, Math.min(6, parseInt(document.getElementById('len').value||'4',10)));
+    const G = Math.max(2, Math.min(4, parseInt(document.getElementById('groups').value||'2',10)));
+    if(!token){ alert('Enter Admin Token'); return; }
+    if(!count){ alert('Enter count'); return; }
+    const res = await fetch('/.netlify/functions/license', {
+      method:'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer ' + token},
+      body: JSON.stringify({ action:'bulk_generate', count, prefix, L, G })
+    });
+    const data = await res.json();
+    if(!data.ok){ alert('Error: ' + (data.reason||'unknown')); return; }
+    document.getElementById('out').value = data.codes.join('\n');
+  }
+  document.getElementById('genBtn').onclick = adminGenerate;
+  document.getElementById('copyBtn').onclick = async () => {
+    await navigator.clipboard.writeText(document.getElementById('out').value);
+    alert('Copied');
+  };
+  document.getElementById('saveBtn').onclick = () => {
+    const blob = new Blob([document.getElementById('out').value], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bingo-codes.txt';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 500);
+  };
+  </script>
+</body>
+</html>
