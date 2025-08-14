@@ -9,3 +9,6 @@
 
 [functions."*"]
   external_node_modules = ["@netlify/blobs"]
+[build.processing]
+  skip_processing = true
+
