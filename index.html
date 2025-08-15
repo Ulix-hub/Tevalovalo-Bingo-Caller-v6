@@ -1,112 +1,414 @@
+# /owner.html — Owner dashboard (generate, list, check/reset/rebind)
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tevalovalo Bingo Caller</title>
+  <title>Tevalovalo Owner — Codes</title>
   <meta name="theme-color" content="#0d47a1" />
-  <meta name="description" content="Tevalovalo Bingo Caller — themes, PNG export, lock, and server-verified one-time codes." />
-  <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
-  <link rel="stylesheet" href="/style.css" />
+  <style>
+    :root{ --bg:#0f172a; --card:#0b1220; --ink:#e2e8f0; --muted:#94a3b8; --ok:#22c55e; --bad:#ef4444; --outline:#1e293b; --accent:#2563eb }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:var(--bg); color:var(--ink)}
+    header{padding:14px 16px; border-bottom:1px solid var(--outline); background:#0b1220}
+    h1{margin:0; font-size:1.1rem}
+    main{max-width:1100px; margin:0 auto; padding:16px}
+    .card{background:#0b1220; border:1px solid var(--outline); border-radius:12px; padding:14px; margin:12px 0}
+    .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+    input,select{background:#0b1220; color:var(--ink); border:1px solid var(--outline); padding:8px 10px; border-radius:8px}
+    button{background:var(--accent); color:white; border:1px solid #0b3ea8; padding:8px 12px; border-radius:10px; cursor:pointer}
+    button.ghost{background:transparent; border-color:var(--outline)}
+    button[disabled]{opacity:.5; cursor:not-allowed}
+    table{width:100%; border-collapse:collapse; margin-top:10px}
+    th,td{border-bottom:1px solid var(--outline); padding:8px; text-align:left}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--outline)}
+    .pill.ok{background:rgba(34,197,94,.15); color:#86efac}
+    .pill.bad{background:rgba(239,68,68,.15); color:#fecaca}
+    .flex{display:flex; gap:6px; align-items:center}
+    .right{display:flex; gap:6px; align-items:center; justify-content:flex-end}
+    .split{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    @media (max-width: 820px){ .split{grid-template-columns:1fr} }
+    .footer{margin-top:16px; font-size:12px; color:var(--muted)}
+    .warn{color:#fca5a5}
+  </style>
 </head>
-<body class="theme-classic">
-  <!-- LICENSE GATE -->
-  <div id="licenseGate" class="license-gate">
-    <div class="gate-card">
-      <h2>Enter Access Code</h2>
-      <p class="muted">One-time unlock on this device.</p>
-      <input id="codeInput" placeholder="e.g. TVLV-ABCD-1234" />
-      <div class="gate-actions">
-        <button id="verifyBtn">Unlock</button>
-        <button id="helpBtn" class="ghost">Help</button>
-      </div>
-      <div id="gateMsg" class="msg"></div>
-    </div>
-  </div>
-
-  <!-- APP -->
-  <header>
-    <h1>Tevalovalo Bingo Caller</h1>
-    <div class="controls-row">
-      <button id="startBtn">Start</button>
-      <button id="nextBtn" disabled>Next Call</button>
-      <button id="undoBtn" disabled>Undo</button>
-      <button id="resetBtn" disabled>Reset</button>
-      <button id="fsBtn">Fullscreen</button>
-      <button id="lockBtn" class="lock">Lock</button>
-    </div>
-
-    <div class="controls-row">
-      <label><input type="checkbox" id="speakToggle" checked /> Speak calls</label>
-      <label><input type="checkbox" id="soundToggle" /> Play sound</label>
-      <label class="inline">
-        Auto call
-        <input type="number" id="autoSeconds" min="2" max="60" value="6" />s
-        <button id="autoToggle" disabled>Start Auto</button>
-      </label>
-      <label class="inline">
-        Theme
-        <select id="themeSelect">
-          <option value="random" selected>Random each game</option>
-          <option value="theme-classic">Classic</option>
-          <option value="theme-neon">Neon</option>
-          <option value="theme-pastel">Pastel</option>
-          <option value="theme-contrast">High Contrast</option>
-          <option value="theme-ocean">Ocean</option>
-        </select>
-      </label>
-      <button id="downloadPngBtn" title="Download board as an image">Download PNG</button>
-    </div>
-  </header>
-
+<body>
+  <header><h1>Tevalovalo Owner — Codes</h1></header>
   <main>
-    <section class="current">
-      <div class="label">Current Call</div>
-      <div id="currentCall" class="current-number">—</div>
-      <div id="lastFive" class="last-five">Last 5: —</div>
-    </section>
+    <div class="card">
+      <div class="row">
+        <input id="token" placeholder="Admin token" style="min-width:260px" />
+        <button id="saveToken">Use Token</button>
+        <span id="tokenState" class="muted"></span>
+      </div>
+    </div>
 
-    <section>
-      <div id="grid" class="grid"></div>
-    </section>
+    <div class="split">
+      <div class="card">
+        <h3 style="margin-top:0">Generate codes</h3>
+        <div class="row">
+          <label>Count <input id="genCount" type="number" value="5" min="1" max="200" style="width:90px"></label>
+          <label>Prefix <input id="genPrefix" value="TVLV" style="width:100px"></label>
+          <label>L (chars) <input id="genL" type="number" value="4" min="4" max="6" style="width:80px"></label>
+          <label>G (groups) <input id="genG" type="number" value="2" min="2" max="4" style="width:80px"></label>
+          <button id="genBtn">Generate</button>
+        </div>
+        <pre id="genOut" class="muted" style="white-space:pre-wrap; margin-top:10px"></pre>
+      </div>
 
-    <section>
-      <h2>History</h2>
-      <div id="history" class="history"></div>
-    </section>
+      <div class="card">
+        <h3 style="margin-top:0">Check / Reset / Rebind</h3>
+        <div class="row">
+          <input id="checkCode" placeholder="Code e.g. TVLV-ABCD-1234" style="min-width:260px">
+          <button id="checkBtn">Check</button>
+          <button id="resetBtn" class="ghost">Reset → unused</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="rebindDevice" placeholder="New deviceId (optional)" style="min-width:260px">
+          <button id="rebindBtn" class="ghost">Rebind to device</button>
+        </div>
+        <pre id="checkOut" class="muted" style="white-space:pre-wrap; margin-top:10px"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="flex">
+          <strong>Codes</strong>
+          <select id="fltStatus">
+            <option value="all">All</option>
+            <option value="unused">Unused</option>
+            <option value="used">Used</option>
+          </select>
+          <input id="fltPrefix" placeholder="Prefix filter (optional)" style="width:160px">
+        </div>
+        <div class="right">
+          <button id="refresh">Refresh</button>
+        </div>
+      </div>
+      <div id="listWrap" class="muted" style="margin-top:8px">No data</div>
+      <div class="right" style="margin-top:8px">
+        <button id="prevPage" class="ghost" disabled>Prev</button>
+        <button id="nextPage" class="ghost" disabled>Next</button>
+      </div>
+    </div>
+
+    <div class="footer">Tip: click a code to copy. Rebind moves a used code to a new device (e.g. customer changed phones).</div>
   </main>
 
-  <div id="lockOverlay" class="lock-overlay" hidden>
-    <div class="lock-card">
-      <div class="padlock">🔒</div>
-      <div class="lock-title">Board Locked</div>
-      <div class="lock-sub">PNG export still available.</div>
-      <div class="lock-actions">
-        <button id="unlockBtn">Unlock</button>
-      </div>
-    </div>
-  </div>
-
-  <audio id="ding" preload="auto">
-    <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
-  </audio>
-
-  <canvas id="exportCanvas" width="1400" height="1000" style="display:none"></canvas>
-
-  <script src="/script.js?v=live6" defer></script>
 <script>
-  // Only register the SW if ?nosw=1 is NOT present
-  if ('serviceWorker' in navigator) {
-    const nosw = /(?:^|[?&])nosw=1(?:&|$)/.test(location.search);
-    if (!nosw) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js?v=v8');
-      });
-    }
-  }
-</script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const tokenInput = $('token');
+  const saveTokenBtn = $('saveToken');
+  const tokenState = $('tokenState');
 
+  let ADMIN = sessionStorage.getItem('ADMIN_TOKEN') || '';
+  if (ADMIN) { tokenInput.value = ADMIN; tokenState.textContent = 'token loaded'; }
+
+  saveTokenBtn.onclick = () => {
+    ADMIN = tokenInput.value.trim();
+    if (!ADMIN) { tokenState.textContent = 'enter token'; return; }
+    sessionStorage.setItem('ADMIN_TOKEN', ADMIN);
+    tokenState.textContent = 'token saved';
+  };
+
+  async function call(body){
+    const res = await fetch('/.netlify/functions/license', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + ADMIN },
+      body: JSON.stringify(body)
+    });
+    const out = await res.json().catch(()=>({ok:false, reason:'bad_json'}));
+    if (!res.ok) return out; // e.g., unauthorized or server error with json body
+    return out;
+  }
+
+  // Generate
+  $('genBtn').onclick = async () => {
+    $('genOut').textContent = '';
+    const count = Math.max(1, Math.min(5000, parseInt($('genCount').value||'1',10)));
+    const prefix = $('genPrefix').value.trim().toUpperCase();
+    const L = Math.max(4, Math.min(6, parseInt($('genL').value||'4',10)));
+    const G = Math.max(2, Math.min(4, parseInt($('genG').value||'2',10)));
+    const r = await call({ action:'bulk_generate', count, prefix, L, G });
+    if (r.ok) {
+      $('genOut').textContent = r.codes.join('\n');
+    } else {
+      $('genOut').textContent = 'Error: ' + (r.reason||'unknown');
+    }
+  };
+
+  // Check / Reset / Rebind
+  $('checkBtn').onclick = async () => {
+    $('checkOut').textContent = '';
+    const code = $('checkCode').value.trim();
+    const r = await call({ action:'admin_check', code });
+    $('checkOut').textContent = JSON.stringify(r, null, 2);
+  };
+  $('resetBtn').onclick = async () => {
+    const code = $('checkCode').value.trim(); if (!code) return;
+    if (!confirm('Reset this code to UNUSED?')) return;
+    const r = await call({ action:'admin_reset', code });
+    $('checkOut').textContent = JSON.stringify(r, null, 2);
+  };
+  $('rebindBtn').onclick = async () => {
+    const code = $('checkCode').value.trim(); const deviceId = $('rebindDevice').value.trim(); if (!code || !deviceId) return;
+    if (!confirm('Rebind this code to the new deviceId?')) return;
+    const r = await call({ action:'admin_rebind', code, deviceId });
+    $('checkOut').textContent = JSON.stringify(r, null, 2);
+  };
+
+  // List with paging
+  let cursor = '';
+  let prevStack = [];
+  async function refresh(){
+    $('listWrap').textContent = 'Loading…';
+    const status = $('fltStatus').value; // all/unused/used
+    const prefix = $('fltPrefix').value.trim().toUpperCase();
+    const r = await call({ action:'admin_list', status, prefix, cursor, limit: 100 });
+    if (!r.ok){ $('listWrap').textContent = 'Error: ' + (r.reason||'unknown'); return; }
+    const rows = r.items || [];
+    const html = [`<table><thead><tr><th>Code</th><th>Status</th><th>Device</th><th>When</th><th></th></tr></thead><tbody>`];
+    for (const it of rows){
+      const used = it.status === 'used';
+      const when = used && it.usedAt ? new Date(it.usedAt).toLocaleString() : (it.createdAt? new Date(it.createdAt).toLocaleString() : '—');
+      html.push(`<tr>`+
+        `<td><code class="copy" data-code="${it.code}">${it.code}</code></td>`+
+        `<td><span class="pill ${used?'bad':'ok'}">${it.status||'?'}</span></td>`+
+        `<td class="muted">${it.deviceId||'—'}</td>`+
+        `<td class="muted">${when}</td>`+
+        `<td class="right">`+
+          `${used?`<button class="ghost act-reset" data-code="${it.code}">Reset</button>`:''}`+
+        `</td>`+
+      `</tr>`);
+    }
+    html.push(`</tbody></table>`);
+    $('listWrap').innerHTML = html.join('');
+
+    // copy-on-click
+    document.querySelectorAll('code.copy').forEach(el => el.onclick = () => {
+      navigator.clipboard.writeText(el.dataset.code || el.textContent || '').then(()=>{
+        el.title = 'Copied!'; setTimeout(()=>el.title='',1200);
+      });
+    });
+    // reset buttons
+    document.querySelectorAll('button.act-reset').forEach(btn => btn.onclick = async () => {
+      const code = btn.dataset.code; if (!confirm('Reset '+code+' to UNUSED?')) return;
+      const r2 = await call({ action:'admin_reset', code });
+      alert(r2.ok ? 'Reset OK' : ('Error: '+(r2.reason||'unknown')));
+      refresh();
+    });
+
+    // paging
+    $('prevPage').disabled = prevStack.length === 0;
+    $('nextPage').disabled = !r.cursor;
+    $('nextPage').onclick = () => { if (r.cursor){ prevStack.push(cursor); cursor = r.cursor; refresh(); } };
+    $('prevPage').onclick = () => { if (prevStack.length){ cursor = prevStack.pop(); refresh(); } };
+  }
+  $('refresh').onclick = () => { prevStack = []; cursor=''; refresh(); };
+  $('fltStatus').onchange = () => { prevStack = []; cursor=''; refresh(); };
+  $('fltPrefix').onchange = () => { prevStack = []; cursor=''; refresh(); };
+
+  // Auto-refresh once token present
+  if (ADMIN) refresh();
+})();
+</script>
 </body>
 </html>
+```
+
+---
+
+# /netlify/functions/license.js — add admin endpoints (check/reset/rebind/list)
+
+```js
+// netlify/functions/license.js (ESM)
+// Server-verified licensing with Netlify Blobs: one-time code per device.
+
+import { getStore } from '@netlify/blobs';
+
+const STORE_NAME = 'bingo-licenses';
+const ADMIN_HEADER = 'authorization'; // expect: Bearer <token>
+
+function json(status, body){
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+function normalizeCode(code){
+  return (code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '');
+}
+
+// e.g., TVLV-ABCD-1234
+function randomCode(prefix = '', L = 4, G = 2){
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O/0/1/I confusers
+  const group = n => Array.from({ length: n }, () => alphabet[Math.floor(Math.random()*alphabet.length)]).join('');
+  const core = Array.from({ length: G }, () => group(L)).join('-');
+  return (prefix ? prefix + '-' : '') + core;
+}
+
+export default async (req) => {
+  const store = getStore(STORE_NAME);
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const action = body.action;
+
+    // Player activation
+    if (action === 'activate'){
+      const code = normalizeCode(body.code);
+      const deviceId = String(body.deviceId || '').slice(0,128);
+      if (!code || !deviceId) return json(400, { ok:false, reason:'bad_request' });
+
+      const key = 'code:' + code;
+      const recordRaw = await store.get(key, { consistency: 'strong' });
+      if (!recordRaw) return json(200, { ok:false, reason:'invalid_code' });
+
+      let record;
+      try { record = JSON.parse(recordRaw); } catch { record = null; }
+      if (!record || !record.status) return json(200, { ok:false, reason:'invalid_code' });
+
+      if (record.status === 'unused'){
+        record.status = 'used';
+        record.deviceId = deviceId;
+        record.usedAt = Date.now();
+        await store.set(key, JSON.stringify(record));
+        return json(200, { ok:true, usedAt: record.usedAt });
+      }
+
+      if (record.status === 'used'){
+        if (record.deviceId === deviceId){
+          // Allow re-activation on the same device (cache cleared/reinstall)
+          return json(200, { ok:true, usedAt: record.usedAt });
+        }
+        return json(200, { ok:false, reason:'already_used' });
+      }
+
+      return json(200, { ok:false, reason:'invalid_code' });
+    }
+
+    // Owner bulk generation
+    if (action === 'bulk_generate'){
+      const auth = req.headers.get(ADMIN_HEADER) || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || token !== process.env.ADMIN_TOKEN){
+        return json(401, { ok:false, reason:'unauthorized' });
+      }
+
+      const count = Math.max(1, Math.min(5000, parseInt(body.count || '0', 10)));
+      const prefix = String(body.prefix || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      const L = Math.max(4, Math.min(6, parseInt(body.L || '4', 10)));
+      const G = Math.max(2, Math.min(4, parseInt(body.G || '2', 10)));
+      if (!count) return json(400, { ok:false, reason:'bad_request' });
+
+      const codes = [];
+      for (let i=0; i<count; i++){
+        let tries = 0, code, exists;
+        do {
+          code = randomCode(prefix, L, G);
+          exists = await store.get('code:' + code, { consistency: 'strong' });
+          tries++;
+        } while (exists && tries < 6);
+
+        if (exists) continue; // rare: all tries collided
+        await store.set('code:' + code, JSON.stringify({ status:'unused', createdAt: Date.now() }));
+        codes.push(code);
+      }
+
+      return json(200, { ok:true, codes });
+    }
+
+    // --- Admin: check code status ---
+    if (action === 'admin_check'){
+      const auth = req.headers.get(ADMIN_HEADER) || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || token !== process.env.ADMIN_TOKEN) return json(401, { ok:false, reason:'unauthorized' });
+
+      const code = normalizeCode(body.code);
+      if (!code) return json(400, { ok:false, reason:'bad_request' });
+
+      const key = 'code:' + code;
+      const raw = await store.get(key, { consistency:'strong' });
+      return json(200, { ok:true, record: raw ? JSON.parse(raw) : null });
+    }
+
+    // --- Admin: reset to unused ---
+    if (action === 'admin_reset'){
+      const auth = req.headers.get(ADMIN_HEADER) || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || token !== process.env.ADMIN_TOKEN) return json(401, { ok:false, reason:'unauthorized' });
+
+      const code = normalizeCode(body.code);
+      if (!code) return json(400, { ok:false, reason:'bad_request' });
+
+      const key = 'code:' + code;
+      const raw = await store.get(key, { consistency:'strong' });
+      if (!raw) return json(200, { ok:false, reason:'invalid_code' });
+
+      await store.set(key, JSON.stringify({ status:'unused', createdAt: Date.now() }));
+      return json(200, { ok:true });
+    }
+
+    // --- Admin: rebind to a new device ---
+    if (action === 'admin_rebind'){
+      const auth = req.headers.get(ADMIN_HEADER) || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || token !== process.env.ADMIN_TOKEN) return json(401, { ok:false, reason:'unauthorized' });
+
+      const code = normalizeCode(body.code);
+      const deviceId = String(body.deviceId || '').slice(0,128);
+      if (!code || !deviceId) return json(400, { ok:false, reason:'bad_request' });
+
+      const key = 'code:' + code;
+      const raw = await store.get(key, { consistency:'strong' });
+      if (!raw) return json(200, { ok:false, reason:'invalid_code' });
+
+      const rec = JSON.parse(raw);
+      rec.status = 'used';
+      rec.deviceId = deviceId;
+      rec.usedAt = Date.now();
+      await store.set(key, JSON.stringify(rec));
+      return json(200, { ok:true, rebind:true });
+    }
+
+    // --- Admin: list codes (paged) ---
+    if (action === 'admin_list'){
+      const auth = req.headers.get(ADMIN_HEADER) || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || token !== process.env.ADMIN_TOKEN) return json(401, { ok:false, reason:'unauthorized' });
+
+      const status = (String(body.status||'all')).toLowerCase(); // all|unused|used
+      const prefix = String(body.prefix||'').toUpperCase().replace(/[^A-Z0-9-]/g,'');
+      const limit = Math.max(1, Math.min(200, parseInt(body.limit||'100',10)));
+      const cursor = body.cursor ? String(body.cursor) : undefined;
+
+      // Netlify Blobs listing with prefix
+      const listPrefix = 'code:' + (prefix ? prefix : '');
+      const { keys = [], cursor: nextCursor } = await store.list({ prefix: listPrefix, cursor, limit });
+
+      const items = [];
+      for (const k of keys){
+        const key = k; // already like 'code:TVLV-....'
+        const code = key.slice(5);
+        const raw = await store.get(key, { consistency:'strong' });
+        if (!raw) continue;
+        let rec; try { rec = JSON.parse(raw); } catch { continue; }
+        if (status !== 'all' && rec.status !== status) continue;
+        items.push({ code, status: rec.status, deviceId: rec.deviceId||null, usedAt: rec.usedAt||null, createdAt: rec.createdAt||null });
+      }
+      return json(200, { ok:true, items, cursor: nextCursor||'' });
+    }
+
+    return json(404, { ok:false, reason:'unknown_action' });
+  } catch (e){
+    return json(500, { ok:false, reason:'server_error' });
+  }
+};
+```
