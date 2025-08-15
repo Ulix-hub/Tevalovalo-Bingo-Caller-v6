@@ -95,9 +95,18 @@
 
   <canvas id="exportCanvas" width="1400" height="1000" style="display:none"></canvas>
 
-  <script src="/script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js')); }
-  </script>
+  <script src="/script.js?v=fix8" defer></script>
+<script>
+  // Only register the SW if ?nosw=1 is NOT present
+  if ('serviceWorker' in navigator) {
+    const nosw = /(?:^|[?&])nosw=1(?:&|$)/.test(location.search);
+    if (!nosw) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js?v=v8');
+      });
+    }
+  }
+</script>
+
 </body>
 </html>
