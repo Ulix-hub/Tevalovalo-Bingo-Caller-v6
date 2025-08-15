@@ -238,15 +238,19 @@ function lockBoard(){
 }
 
 function unlockBoard(){
-  if(!isLocked) return;
-  if(pinCode){
-    const entry=prompt('Enter PIN:');
-    if(entry!==pinCode){ alert('Incorrect PIN.'); return; }
+  // If a PIN was set when locking, ask for it
+  if (pinCode){
+    const entry = prompt('Enter PIN:');
+    if (entry !== pinCode){ alert('Incorrect PIN.'); return; }
   }
-  isLocked=false;
-  lockOverlay.hidden=true;
+  // Always unlock & hide the overlay (even if the flag was out of sync)
+  isLocked = false;
+  lockOverlay.hidden = true;
+  lockOverlay.style.display = 'none';
+  lockOverlay.setAttribute('aria-hidden','true');
   updateUI();
 }
+
 
 // ---------- PNG Export ----------
 function getCurrentThemeClass(){ return THEME_CLASSES.find(cls=>document.body.classList.contains(cls))||'theme-classic'; }
