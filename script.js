@@ -153,7 +153,7 @@ function updateUI(){
   resetBtn.disabled = (called.length === 0 && pool.length === 0) || isLocked;
   autoToggle.disabled = (pool.length === 0 && autoTimer === null) || isLocked;
   themeSelect.disabled = isLocked;
-  startBtn.disabled = isLocked && pool.length>0;
+  startBtn.disabled = isLocked;
   lockBtn.textContent = isLocked ? 'Locked' : 'Lock';
 }
 
