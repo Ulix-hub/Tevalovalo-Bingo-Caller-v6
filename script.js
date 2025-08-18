@@ -250,6 +250,12 @@ function unlockBoard(){
   lockOverlay.setAttribute('aria-hidden','true');
   updateUI();
 }
+function saveCalled(){
+  try{
+    localStorage.setItem('bingo_called_numbers', JSON.stringify(called));
+    localStorage.setItem('bingo_called_updated', String(Date.now()));
+  }catch{}
+}
 
 
 // ---------- PNG Export ----------
