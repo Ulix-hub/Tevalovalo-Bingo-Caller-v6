@@ -38,7 +38,14 @@
       <button id="fsBtn">Fullscreen</button>
       <button id="lockBtn" class="lock">Lock</button>
     </div>
-
+    
+    <!-- Place this somewhere in your index.html, for example below the header or controls -->
+<div style="margin:1rem; text-align:right;">
+  <button onclick="window.open('checker.html','_blank')"
+          style="padding:0.6rem 1rem; font-size:1rem; border:none; border-radius:8px; background:#1976d2; color:white; cursor:pointer;">
+    Open Checker
+  </button>
+</div>
     <div class="controls-row">
       <label><input type="checkbox" id="speakToggle" checked /> Speak calls</label>
       <label><input type="checkbox" id="soundToggle" /> Play sound</label>
