@@ -1,357 +1,142 @@
-# checker.html (drop this at your site root)
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tevalovalo — Bingo Checker</title>
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="UTF-8">
+  <title>Bingo Checker</title>
   <style>
-    /* page layout on top of your existing style.css */
-    main{max-width:1100px;margin:0 auto;padding:16px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media (max-width: 900px){ .grid2{grid-template-columns:1fr} }
-    .card{background:var(--card);border:1px solid var(--outline);border-radius:12px;padding:14px}
-    h2{margin:0 0 8px 0;font-size:1.1rem}
-    .muted{color:var(--muted)}
-    input, textarea, select{width:100%;background:#0b1220;color:var(--ink);border:1px solid var(--outline);border-radius:10px;padding:10px}
-    textarea{min-height:90px;resize:vertical}
-    .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--outline);font-size:12px;margin-right:6px}
-    .pill.ok{background:rgba(34,197,94,.15);color:#86efac}
-    .pill.warn{background:rgba(250,204,21,.15);color:#fde68a}
-    .pill.bad{background:rgba(239,68,68,.15);color:#fecaca}
-    .btn{background:var(--accent);color:#fff;border:1px solid #0b3ea8;border-radius:10px;padding:10px 12px;cursor:pointer}
-    .btn.ghost{background:transparent;border-color:var(--outline)}
-    .flex{display:flex;gap:8px;align-items:center}
-    code.tag{display:inline-block;background:#0b1220;border:1px solid var(--outline);border-radius:999px;padding:4px 8px;margin:2px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-    .small{font-size:12px}
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 { text-align: center; }
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      margin: 0.3rem;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    .preset-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .result {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .ok { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Tevalovalo — Bingo Checker</h1>
-    <div class="controls-row">
-      <a class="btn ghost" href="/">⬅ Back to Caller</a>
-      <label class="inline">
-        Auto‑link to caller
-        <select id="linkMode">
-          <option value="auto" selected>Auto (same device)</option>
-          <option value="manual">Manual (paste called numbers)</option>
-        </select>
-      </label>
-      <span class="muted small">Tip: open this on the same device as the caller for auto‑sync.</span>
-    </div>
-  </header>
+  <h1>Bingo Checker</h1>
+  <div class="container">
+    <p>Paste or type the numbers from the player’s card (separated by spaces or commas), or click a preset:</p>
+    
+    <textarea id="cardInput" placeholder="e.g. 1 15 34 52 70"></textarea>
+    <button onclick="checkCard()">Check Card</button>
 
-  <main>
-    <div class="grid2">
-      <!-- Called numbers (from board) -->
-      <section class="card">
-        <h2>Called numbers</h2>
-        <div class="row small muted">Source: <span id="calledSource">localStorage</span> • Updated: <span id="calledWhen">—</span></div>
-        <div id="calledChips" style="margin-top:10px"></div>
-        <details style="margin-top:10px">
-          <summary>Manual called numbers (comma/space)</summary>
-          <textarea id="calledManual" placeholder="e.g. 5, 9, 13 24 31 45 ..."></textarea>
-          <div class="row" style="margin-top:8px">
-            <button class="btn" id="useManual">Use manual list</button>
-            <button class="btn ghost" id="clearManual">Clear manual</button>
-          </div>
-        </details>
-      </section>
-
-      <!-- Ticket checker -->
-      <section class="card">
-        <h2>Check a ticket</h2>
-        <div class="row">
-          <input id="playerId" placeholder="Player / Ticket ID (optional)" />
-        </div>
-        <div class="row" style="margin-top:8px">
-          <textarea id="rowA" placeholder="Row A (space/comma separated)"></textarea>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <textarea id="rowB" placeholder="Row B (space/comma separated)"></textarea>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <textarea id="rowC" placeholder="Row C (space/comma separated)"></textarea>
-        </div>
-        <details style="margin-top:8px">
-          <summary>Or paste ALL ticket numbers (Full House check)</summary>
-          <textarea id="allNums" placeholder="Up to 15 numbers (3x5)"></textarea>
-        </details>
-        <div class="row" style="margin-top:8px">
-          <label class="inline">Claim type
-            <select id="claimType">
-              <option value="auto" selected>Auto detect</option>
-              <option value="line">Line</option>
-              <option value="two">Two Lines</option>
-              <option value="fh">Full House</option>
-            </select>
-          </label>
-          <label class="inline">Award position
-            <select id="awardPos">
-              <option value="">—</option>
-              <option>1st</option>
-              <option>2nd</option>
-              <option>3rd</option>
-              <option>4th</option>
-              <option>5th</option>
-              <option>6th</option>
-            </select>
-          </label>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <button class="btn" id="checkBtn">Check ticket</button>
-          <button class="btn ghost" id="clearBtn">Clear</button>
-        </div>
-        <div id="result" style="margin-top:10px"></div>
-      </section>
+    <div class="preset-buttons">
+      <button onclick="loadPreset('line1')">Line 1</button>
+      <button onclick="loadPreset('line2')">Line 2</button>
+      <button onclick="loadPreset('line3')">Line 3</button>
+      <button onclick="loadPreset('line4')">Line 4</button>
+      <button onclick="loadPreset('line5')">Line 5</button>
+      <button onclick="loadPreset('line6')">Line 6</button>
+      <button onclick="loadPreset('fh1')">Full House 1</button>
+      <button onclick="loadPreset('fh2')">Full House 2</button>
+      <button onclick="loadPreset('fh3')">Full House 3</button>
     </div>
 
-    <!-- Claims log -->
-    <section class="card" style="margin-top:16px">
-      <div class="row" style="justify-content:space-between">
-        <h2 style="margin:0">Claims log (local)</h2>
-        <div class="row">
-          <button class="btn ghost" id="exportClaims">Export CSV</button>
-          <button class="btn ghost" id="clearClaims">Clear log</button>
-        </div>
-      </div>
-      <div id="claimsWrap" class="small muted" style="margin-top:8px">No claims yet.</div>
-    </section>
-  </main>
+    <div id="result" class="result"></div>
+    <p style="font-size:0.9em;color:#666;text-align:center;">
+      Board last updated: <span id="lastUpdate">never</span>
+    </p>
+  </div>
 
-<script>
-(function(){
-  const $ = id => document.getElementById(id);
-  const chips = $('calledChips');
-  const linkMode = $('linkMode');
-  const calledSource = $('calledSource');
-  const calledWhen = $('calledWhen');
-  const calledManual = $('calledManual');
-  const useManual = $('useManual');
-  const clearManual = $('clearManual');
+  <script>
+    // 🔹 Define preset cards here
+    const PRESETS = {
+      line1: [1, 7, 12, 25, 34],
+      line2: [5, 18, 22, 41, 59],
+      line3: [2, 15, 29, 33, 47],
+      line4: [8, 19, 27, 45, 66],
+      line5: [3, 16, 30, 52, 71],
+      line6: [10, 24, 39, 54, 78],
+      fh1: [1, 7, 12, 25, 34, 5, 18, 22, 41, 59, 2, 15, 29, 33, 47],
+      fh2: [8, 19, 27, 45, 66, 3, 16, 30, 52, 71, 10, 24, 39, 54, 78],
+      fh3: [6, 13, 28, 44, 55, 9, 20, 31, 46, 69, 11, 23, 35, 53, 80]
+    };
 
-  let called = new Set();
-  let calledStamp = 0;
+    function getCalled() {
+      try {
+        const raw = localStorage.getItem('bingo_called_numbers');
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) { return []; }
+    }
+    function getLastUpdate() {
+      const ts = localStorage.getItem('bingo_called_updated');
+      return ts ? new Date(Number(ts)).toLocaleString() : 'never';
+    }
+    function normalizeNumbers(text) {
+      return text.split(/[^0-9]+/).map(x => parseInt(x,10)).filter(x => !isNaN(x));
+    }
 
-  // --- helpers ---
-  const parseNums = s => Array.from(new Set((s||'').toUpperCase().replace(/[^0-9,\s]/g,' ').split(/[\s,]+/).filter(Boolean).map(x=>parseInt(x,10)).filter(n=>n>=1 && n<=90)));
-  const tag = (txt, cls='') => `<code class="tag ${cls}">${txt}</code>`;
-  function renderCalled(){
-    chips.innerHTML = [...called].sort((a,b)=>a-b).map(n=>tag(n)).join('');
-    calledWhen.textContent = calledStamp ? new Date(calledStamp).toLocaleString() : '—';
-  }
+    function checkCard() {
+      const called = new Set(getCalled());
+      const input = document.getElementById('cardInput').value;
+      const nums = normalizeNumbers(input);
 
-  function loadFromLocal(){
-    try{
-      const data = JSON.parse(localStorage.getItem('bingo_called_numbers')||'[]');
-      const stamp = parseInt(localStorage.getItem('bingo_called_updated')||'0',10)||Date.now();
-      called = new Set(Array.isArray(data)?data.filter(n=>n>=1 && n<=90):[]);
-      calledStamp = stamp;
-      calledSource.textContent = 'localStorage';
-      renderCalled();
-    }catch{}
-  }
+      if (!nums.length) {
+        alert("Please enter at least one number or use a preset.");
+        return;
+      }
 
-  function useManualList(){
-    const arr = parseNums(calledManual.value);
-    called = new Set(arr);
-    calledStamp = Date.now();
-    calledSource.textContent = 'manual';
-    renderCalled();
-  }
+      const missed = nums.filter(n => !called.has(n));
+      const resultEl = document.getElementById('result');
+      const lastUpdateEl = document.getElementById('lastUpdate');
+      lastUpdateEl.textContent = getLastUpdate();
 
-  // React to caller updates in another tab
-  window.addEventListener('storage', (e)=>{
-    if (linkMode.value !== 'auto') return;
-    if (e.key === 'bingo_called_numbers' || e.key === 'bingo_called_updated') loadFromLocal();
-  });
-
-  // initial load
-  loadFromLocal();
-
-  // UI wiring
-  useManual.onclick = useManualList;
-  clearManual.onclick = () => { calledManual.value=''; };
-  linkMode.onchange = () => {
-    if (linkMode.value === 'auto') loadFromLocal();
-  };
-
-  // --- Ticket checking ---
-  const rowA = $('rowA'), rowB = $('rowB'), rowC = $('rowC');
-  const allNums = $('allNums');
-  const claimType = $('claimType');
-  const awardPos = $('awardPos');
-  const result = $('result');
-
-  function rowReport(nums){
-    const arr = parseNums(nums.join ? nums.join(' ') : String(nums||''));
-    const hit = arr.filter(n=>called.has(n));
-    const miss = arr.filter(n=>!called.has(n));
-    return { arr, hit, miss, ok: miss.length===0 };
-  }
-
-  function detectLines(rA, rB, rC){
-    const okA = rA.ok, okB = rB.ok, okC = rC.ok;
-    const lines = [okA, okB, okC].filter(Boolean).length;
-    if (lines === 3) return 'fh';
-    if (lines === 2) return 'two';
-    if (lines === 1) return 'line';
-    return 'none';
-  }
-
-  function checkTicket(){
-    let A = parseNums(rowA.value), B = parseNums(rowB.value), C = parseNums(rowC.value);
-    if (!A.length && !B.length && !C.length){
-      // try ALL nums (for FH)
-      const all = parseNums(allNums.value);
-      if (all.length){
-        // split into chunks of 5 (best effort)
-        A = all.slice(0,5); B = all.slice(5,10); C = all.slice(10,15);
+      if (missed.length === 0) {
+        resultEl.textContent = "✅ VALID! All numbers have been called.";
+        resultEl.className = "result ok";
+      } else {
+        resultEl.textContent = "❌ INVALID! These numbers were not yet called: " + missed.join(", ");
+        resultEl.className = "result fail";
       }
     }
 
-    const rA = rowReport(A), rB = rowReport(B), rC = rowReport(C);
-    const auto = detectLines(rA,rB,rC);
+    function loadPreset(name) {
+      const nums = PRESETS[name] || [];
+      document.getElementById('cardInput').value = nums.join(" ");
+      checkCard();
+    }
 
-    const want = claimType.value==='auto' ? auto : claimType.value;
-
-    // Build UI
-    const pills = [];
-    if (rA.arr.length) pills.push(tag(`Row A: ${rA.ok?'OK':'missing '+rA.miss.join(', ')}` , rA.ok?'ok':(rA.miss.length? 'bad':'') ));
-    if (rB.arr.length) pills.push(tag(`Row B: ${rB.ok?'OK':'missing '+rB.miss.join(', ')}` , rB.ok?'ok':(rB.miss.length? 'bad':'') ));
-    if (rC.arr.length) pills.push(tag(`Row C: ${rC.ok?'OK':'missing '+rC.miss.join(', ')}` , rC.ok?'ok':(rC.miss.length? 'bad':'') ));
-
-    let qualifies = 'No lines complete yet';
-    if (auto==='line') qualifies = 'QUALIFIES: LINE';
-    if (auto==='two')  qualifies = 'QUALIFIES: TWO LINES';
-    if (auto==='fh')   qualifies = 'QUALIFIES: FULL HOUSE';
-
-    const wantNote = (claimType.value!=='auto') ? ` (claim: ${claimType.value.toUpperCase()})` : '';
-
-    result.innerHTML = `
-      <div class="row"><span class="pill ${auto==='fh'?'ok':auto==='line'||auto==='two'?'warn':'bad'}">${qualifies}${wantNote}</span></div>
-      <div style="margin-top:8px">${pills.join(' ')||'<span class=muted>No rows provided yet.</span>'}</div>
-    `;
-
-    return { rA, rB, rC, auto };
-  }
-
-  $('checkBtn').onclick = () => {
-    const rep = checkTicket();
-    // Log claim if qualifies and user wants to save
-    const type = claimType.value==='auto' ? rep.auto : claimType.value;
-    if (type==='none') return;
-    const player = ($('playerId').value||'').trim();
-    const pos = awardPos.value||'';
-    const entry = {
-      ts: Date.now(),
-      player,
-      claim: type,
-      pos,
-      rows: {
-        A: parseNums(rowA.value), B: parseNums(rowB.value), C: parseNums(rowC.value)
-      },
-      called: [...called].sort((a,b)=>a-b)
-    };
-    saveClaim(entry);
-    renderClaims();
-  };
-
-  $('clearBtn').onclick = () => { rowA.value=rowB.value=rowC.value=allNums.value=''; result.innerHTML=''; };
-
-  // --- Claims log (local) ---
-  const CLAIMS_KEY = 'bingo_claims_v1';
-  function saveClaim(obj){
-    const arr = JSON.parse(localStorage.getItem(CLAIMS_KEY)||'[]');
-    arr.push(obj); localStorage.setItem(CLAIMS_KEY, JSON.stringify(arr));
-  }
-  function renderClaims(){
-    const arr = JSON.parse(localStorage.getItem(CLAIMS_KEY)||'[]');
-    if (!arr.length){ $('claimsWrap').innerHTML = 'No claims yet.'; return; }
-    const rows = arr.slice().reverse().map(c=>{
-      const when = new Date(c.ts).toLocaleString();
-      const claimTitle = (c.claim==='fh'?'Full House':(c.claim==='two'?'Two Lines':(c.claim==='line'?'Line':'—')));
-      const pos = c.pos? ` • ${c.pos}`: '';
-      const who = c.player? ` • ${c.player}`: '';
-      return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--outline);padding:6px 0">
-        <div>
-          <span class="pill ${c.claim==='fh'?'ok':'warn'}">${claimTitle}${pos}${who}</span>
-          <span class="small muted">${when}</span>
-        </div>
-        <div class="small mono muted">Rows: A[${(c.rows.A||[]).join(', ')}] B[${(c.rows.B||[]).join(', ')}] C[${(c.rows.C||[]).join(', ')}]</div>
-      </div>`;
-    });
-    $('claimsWrap').innerHTML = rows.join('');
-  }
-  $('exportClaims').onclick = () => {
-    const arr = JSON.parse(localStorage.getItem(CLAIMS_KEY)||'[]');
-    if (!arr.length){ alert('No claims to export'); return; }
-    const header = ['timestamp','when','player','claim','position','rowA','rowB','rowC','called'];
-    const lines = [header.join(',')];
-    arr.forEach(c=>{
-      const when = new Date(c.ts).toISOString();
-      lines.push([
-        c.ts,
-        '"'+when+'"',
-        '"'+(c.player||'')+'"',
-        c.claim,
-        c.pos||'',
-        '"'+(c.rows.A||[]).join(' ')+'"',
-        '"'+(c.rows.B||[]).join(' ')+'"',
-        '"'+(c.rows.C||[]).join(' ')+'"',
-        '"'+(c.called||[]).join(' ')+'"'
-      ].join(','));
-    });
-    const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='bingo-claims.csv'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),500);
-  };
-  $('clearClaims').onclick = () => { if(confirm('Clear claims log on this device?')){ localStorage.removeItem(CLAIMS_KEY); renderClaims(); } };
-
-  renderClaims();
-})();
-</script>
+    // Show last update time on load
+    document.getElementById('lastUpdate').textContent = getLastUpdate();
+  </script>
 </body>
 </html>
-```
-
----
-
-# Caller patch (script.js) — write called numbers for the checker to read
-
-Add the tiny helper and call it in 4 places.
-
-```js
-// 1) Helper near your state variables
-function saveCalled(){
-  try {
-    localStorage.setItem('bingo_called_numbers', JSON.stringify(called));
-    localStorage.setItem('bingo_called_updated', String(Date.now()));
-  } catch {}
-}
-```
-
-```js
-// 2) After you start a game (end of startGame())
-saveCalled();
-```
-
-```js
-// 3) Whenever a number is called (end of nextCall())
-saveCalled();
-```
-
-```js
-// 4) When undoing and resetting (end of undoLast() and resetAll())
-saveCalled();
-```
-
-This keeps the checker in sync automatically on the same device (or another tab) via localStorage + the `storage` event. If you run the checker on a different device, switch its mode to **Manual** and paste the called list.\`\`\`
