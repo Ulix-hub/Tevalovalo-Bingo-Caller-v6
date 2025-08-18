@@ -236,7 +236,6 @@ function lockBoard(){
   lockOverlay.hidden=false;
   updateUI();
 }
-
 function unlockBoard(){
   // If a PIN was set when locking, ask for it
   if (pinCode){
@@ -256,7 +255,28 @@ function saveCalled(){
     localStorage.setItem('bingo_called_updated', String(Date.now()));
   }catch{}
 }
+// --- Make sure called numbers are stored in localStorage for checker.html ---
+function saveCalledNumbers() {
+  const nums = Array.from(document.querySelectorAll('#grid .called'))
+    .map(cell => parseInt(cell.textContent, 10));
+  localStorage.setItem('bingo_called_numbers', JSON.stringify(nums));
+}
 
+// Wrap your "next call" function so it also saves
+const originalNextCall = window.nextCall;
+window.nextCall = function(...args) {
+  const result = originalNextCall.apply(this, args);
+  saveCalledNumbers();
+  return result;
+};
+
+// Also save right after a game starts (so it's fresh)
+const originalStartGame = window.startGame;
+window.startGame = function(...args) {
+  const result = originalStartGame.apply(this, args);
+  saveCalledNumbers();
+  return result;
+};
 
 // ---------- PNG Export ----------
 function getCurrentThemeClass(){ return THEME_CLASSES.find(cls=>document.body.classList.contains(cls))||'theme-classic'; }
